@@ -5,7 +5,7 @@ import { createFormAdd } from './form.add';
 
 describe('ProductForm - createFormAdd', () => {
     beforeEach(() => {
-        document.body.innerHTML = ''; // Limpiar el DOM antes de cada test
+        document.body.innerHTML = '';
     });
 
     it('debería renderizar el formulario correctamente', () => {
@@ -25,7 +25,6 @@ describe('ProductForm - createFormAdd', () => {
     });
 
     it('debería llamar a handleSubmit con los datos del formulario', () => {
-        // Mock de consola para comprobar el log
         const consoleSpy = vi.spyOn(console, 'log');
         const products = [
             {
