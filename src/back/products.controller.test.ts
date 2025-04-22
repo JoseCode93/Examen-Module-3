@@ -94,6 +94,16 @@ describe('ProductsController', () => {
                 error: '',
             });
         });
+
+        it('should call next if product is not found during update', async () => {
+            mockRepo.update.mockRejectedValue(new Error('Not found'));
+            await controller.update(
+                { params: { id: '99' }, body: {} } as Request,
+                res,
+                next,
+            );
+            expect(next).toHaveBeenCalled();
+        });
     });
 
     describe('delete', () => {
@@ -109,6 +119,16 @@ describe('ProductsController', () => {
                 results: [deletedProduct],
                 error: '',
             });
+        });
+
+        it('should call next if product is not found during delete', async () => {
+            mockRepo.delete.mockRejectedValue(new Error('Not found'));
+            await controller.delete(
+                { params: { id: '99' } } as Request,
+                res,
+                next,
+            );
+            expect(next).toHaveBeenCalled();
         });
     });
 });
