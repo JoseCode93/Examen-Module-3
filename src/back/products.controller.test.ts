@@ -120,4 +120,17 @@ describe('ProductsController', () => {
 
         expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
+
+    it('should handle error in update', async () => {
+        const req = {
+            params: { id: '1' },
+            body: { name: 'Fail Update' },
+        } as unknown as Request;
+        const res = mockRes();
+        mockRepo.update.mockRejectedValueOnce(new Error('Update failed'));
+
+        await controller.update(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
 });
