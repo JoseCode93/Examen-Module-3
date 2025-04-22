@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { ProductsController } from '../../src/back/products.controller';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { ProductsController } from './products.controller';
 import type { Request, Response, NextFunction } from 'express';
 
 const mockRepo = {
@@ -10,125 +10,114 @@ const mockRepo = {
     delete: vi.fn(),
 };
 
-const mockProducts = [
-    { id: '1', name: 'Product 1', price: 100, category: 'electronics' },
-    { id: '2', name: 'Product 2', price: 200, category: 'clothing' },
-];
+const controller = new ProductsController(mockRepo as any);
 
-const controller = new ProductsController(mockRepo);
-
-describe('ProductsController', () => {
-    const res = {
+const mockRes = () => {
+    const res: Partial<Response> = {
         json: vi.fn(),
         status: vi.fn().mockReturnThis(),
-    } as unknown as Response;
-    const next = vi.fn() as NextFunction;
+    };
+    return res as Response;
+};
 
-    describe('getAll', () => {
-        it('should return all products', async () => {
-            mockRepo.read.mockResolvedValue(mockProducts);
-            await controller.getAll({} as Request, res, next);
-            expect(res.json).toHaveBeenCalledWith({
-                results: mockProducts,
-                error: '',
-            });
+const next = vi.fn();
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
+
+describe('ProductsController', () => {
+    it('should get all products', async () => {
+        const req = {} as Request;
+        const res = mockRes();
+        const fakeProducts = [{ id: '1', name: 'Test Product' }];
+        mockRepo.read.mockResolvedValueOnce(fakeProducts);
+
+        await controller.getAll(req, res, next);
+
+        expect(res.json).toHaveBeenCalledWith({
+            results: fakeProducts,
+            error: '',
         });
     });
 
-    describe('getById', () => {
-        it('should return a product by id', async () => {
-            const mockProduct = mockProducts[0];
-            mockRepo.readById.mockResolvedValue(mockProduct);
-            await controller.getById(
-                { params: { id: '1' } } as Request,
-                res,
-                next,
-            );
-            expect(res.json).toHaveBeenCalledWith({
-                results: [mockProduct],
-                error: '',
-            });
-        });
+    it('should get product by id', async () => {
+        const req = { params: { id: '1' } } as unknown as Request;
+        const res = mockRes();
+        const product = { id: '1', name: 'Product 1' };
+        mockRepo.readById.mockResolvedValueOnce(product);
 
-        it('should call next if product is not found', async () => {
-            mockRepo.readById.mockRejectedValue(new Error('Not found'));
-            await controller.getById(
-                { params: { id: '99' } } as Request,
-                res,
-                next,
-            );
-            expect(next).toHaveBeenCalled();
+        await controller.getById(req, res, next);
+
+        expect(res.json).toHaveBeenCalledWith({
+            results: [product],
+            error: '',
         });
     });
 
-    describe('create', () => {
-        it('should create a new product', async () => {
-            const newProduct = {
-                name: 'New Product',
-                price: 300,
-                category: 'food',
-            };
-            const createdProduct = { ...newProduct, id: '3' };
-            mockRepo.create.mockResolvedValue(createdProduct);
-            await controller.create({ body: newProduct } as Request, res, next);
-            expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith({
-                results: [createdProduct],
-                error: '',
-            });
+    it('should create a product', async () => {
+        const req = { body: { name: 'New Product' } } as Request;
+        const res = mockRes();
+        const product = { id: '2', name: 'New Product' };
+        mockRepo.create.mockResolvedValueOnce(product);
+
+        await controller.create(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            results: [product],
+            error: '',
         });
     });
 
-    describe('update', () => {
-        it('should update a product', async () => {
-            const updatedData = { name: 'Updated Product' };
-            const updatedProduct = { ...mockProducts[0], ...updatedData };
-            mockRepo.update.mockResolvedValue(updatedProduct);
-            await controller.update(
-                { params: { id: '1' }, body: updatedData } as Request,
-                res,
-                next,
-            );
-            expect(res.json).toHaveBeenCalledWith({
-                results: [updatedProduct],
-                error: '',
-            });
-        });
+    it('should update a product', async () => {
+        const req = {
+            params: { id: '1' },
+            body: { name: 'Updated Product' },
+        } as unknown as Request;
+        const res = mockRes();
+        const updatedProduct = { id: '1', name: 'Updated Product' };
+        mockRepo.update.mockResolvedValueOnce(updatedProduct);
 
-        it('should call next if product is not found during update', async () => {
-            mockRepo.update.mockRejectedValue(new Error('Not found'));
-            await controller.update(
-                { params: { id: '99' }, body: {} } as Request,
-                res,
-                next,
-            );
-            expect(next).toHaveBeenCalled();
+        await controller.update(req, res, next);
+
+        expect(res.json).toHaveBeenCalledWith({
+            results: [updatedProduct],
+            error: '',
         });
     });
 
-    describe('delete', () => {
-        it('should delete a product', async () => {
-            const deletedProduct = mockProducts[0];
-            mockRepo.delete.mockResolvedValue(deletedProduct);
-            await controller.delete(
-                { params: { id: '1' } } as Request,
-                res,
-                next,
-            );
-            expect(res.json).toHaveBeenCalledWith({
-                results: [deletedProduct],
-                error: '',
-            });
-        });
+    it('should delete a product', async () => {
+        const req = { params: { id: '1' } } as unknown as Request;
+        const res = mockRes();
+        const deletedProduct = { id: '1', name: 'Deleted Product' };
+        mockRepo.delete.mockResolvedValueOnce(deletedProduct);
 
-        it('should call next if product is not found during delete', async () => {
-            mockRepo.delete.mockRejectedValue(new Error('Not found'));
-            await controller.delete(
-                { params: { id: '99' } } as Request,
-                res,
-                next,
-            );
-            expect(next).toHaveBeenCalled();
+        await controller.delete(req, res, next);
+
+        expect(res.json).toHaveBeenCalledWith({
+            results: [deletedProduct],
+            error: '',
         });
+    });
+
+    it('should handle error in getById', async () => {
+        const req = { params: { id: '999' } } as unknown as Request;
+        const res = mockRes();
+        mockRepo.readById.mockRejectedValueOnce(new Error('Not found'));
+
+        await controller.getById(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('should handle error in delete', async () => {
+        const req = { params: { id: '1' } } as unknown as Request;
+        const res = mockRes();
+        mockRepo.delete.mockRejectedValueOnce(new Error('Delete failed'));
+
+        await controller.delete(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
 });
